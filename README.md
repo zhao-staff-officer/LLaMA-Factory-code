@@ -33,21 +33,21 @@ LLaMA-Factory 深度支持中文等多语言场景，例如通过 **RoPE 缩放�
 
 #### 环境
 
-##### 	python版本：3.10 
+1. ##### 	python版本：3.10 
 
-##### 	pytourch版本：12.6
+2. ##### 	pytourch版本：12.6
 
-##### 	基础模型：DeepSeek-R1-Distill-Qwen-1.5B
+3. ##### 	基础模型：DeepSeek-R1-Distill-Qwen-1.5B
 
 
 
 #### 基础资料
 
-#####  	[CUDA参考资料](https://cloud.tencent.com/developer/article/2089949) 
+1. #####  	[CUDA参考资料](https://cloud.tencent.com/developer/article/2089949) 
 
-##### 	[HuggingFace模型下载地址](https://huggingface.co/)
+2. ##### 	[HuggingFace模型下载地址](https://huggingface.co/)
 
-##### 	[HF-Mirror模型下载加速地址](https://hf-mirror.com/)
+3. ##### 	[HF-Mirror模型下载加速地址](https://hf-mirror.com/)
 
 
 
