@@ -1,5 +1,8 @@
 ### model
-model_name_or_path: meta-llama/Meta-Llama-3-8B-Instruct
+#适合可以链接网络下载模型的场景
+#model_name_or_path: meta-llama/Meta-Llama-3-8B-Instruct
+#适合不支持联网下载的模型场景
+model_name_or_path: E:\dataSource\LLModels\modelscope\Qwen3-0.6B
 trust_remote_code: true
 
 ### method
@@ -10,18 +13,22 @@ lora_rank: 8
 lora_target: all
 
 ### dataset
-dataset: identity,alpaca_en_demo
+#训练数据集
+dataset: identity,alpaca_zh_demo
 template: llama3
 cutoff_len: 2048
-max_samples: 1000
+max_samples: 100
 overwrite_cache: true
 preprocessing_num_workers: 16
-dataloader_num_workers: 4
+dataloader_num_workers: 0
 
 ### output
-output_dir: saves/llama3-8b/lora/sft
-logging_steps: 10
-save_steps: 500
+#保存地址
+output_dir: saves/Qwen3-0.6B/lora/sft
+#每50条记录一次
+logging_steps: 50
+#每50条保存一次
+save_steps: 50
 plot_loss: true
 overwrite_output_dir: true
 save_only_model: false
