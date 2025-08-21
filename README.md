@@ -51,31 +51,29 @@ LLaMA-Factory 深度支持中文等多语言场景，例如通过 **RoPE 缩放�
 
 
 
-# 训练命令
+# 训练
+
+## 命令
 
 ```shell
 # 启动训练
 # llamafactory-cli train examples/train_lora/llama3_lora_sft.yaml 
-# 启动对话
-# llamafactory-cli chat examples/inference/llama3_lora_sft.yaml
-# 导出模型
-# llamafactory-cli export examples/merge_lora/llama3_lora_sft.yaml
 ```
 
 
 
-# GPU运行状态
+## GPU运行状态
 
 ```shell
-#
+#查看GPU运行状态
 #nvitop -m auto
 ```
 
 
 
-# YAML备注
+## YAML备注
 
-```json
+```yaml
 ### model
 #适合可以链接网络下载模型的场景
 #model_name_or_path: meta-llama/Meta-Llama-3-8B-Instruct
@@ -132,13 +130,83 @@ resume_from_checkpoint: null
 
 ```
 
+# 推理
+
+## 命令
+
+```shell
+# 原始模型推理
+# llamafactory-cli chat examples/inference/llama3.yaml
+
+# 训练模型推理
+# llamafactory-cli chat examples/inference/llama3_lora_sft.yaml
+```
+
+
+
+## 原始模型YAML备注
+
+```yaml
+#原始模型推理
+model_name_or_path: E:\dataSource\LLModels\modelscope\Qwen3-0.6B
+template: llama3
+infer_backend: huggingface  # choices: [huggingface, vllm, sglang]
+trust_remote_code: true
+
+```
 
 
 
 
 
+## 训练模型YAML备注
+
+```yaml
+#模型地址
+model_name_or_path: E:\dataSource\LLModels\modelscope\Qwen3-0.6B
+#微调保存地址
+adapter_name_or_path: saves/Qwen3-0.6B/lora/sft
+template: llama3
+infer_backend: huggingface  # choices: [huggingface, vllm, sglang]
+trust_remote_code: true
+
+```
 
 
+
+
+
+# 合并
+
+## 命令
+
+```shell
+# 导出模型
+# llamafactory-cli export examples/merge_lora/llama3_lora_sft.yaml
+```
+
+
+
+## YAML备注
+
+```yaml
+### Note: DO NOT use quantized model or quantization_bit when merging lora adapters
+
+### model
+#合并模型路径
+model_name_or_path: E:\dataSource\LLModels\modelscope\Qwen3-0.6B
+#训练结果路径
+adapter_name_or_path: saves/Qwen3-0.6B/lora/sft
+template: llama3
+trust_remote_code: true
+
+### export
+#导出路径
+export_dir: output/Qwen3-0.6B-lora_sft
+export_size: 5
+export_device: cpu  # choices: [cpu, auto]
+export_legacy_format: false
+```
 
 
 

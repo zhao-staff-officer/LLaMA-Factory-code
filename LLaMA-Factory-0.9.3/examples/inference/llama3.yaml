@@ -1,4 +1,5 @@
-model_name_or_path: meta-llama/Meta-Llama-3-8B-Instruct
+#原始模型推理
+model_name_or_path: F:\self-platform\LLaMA-Factory\LLaMA-Factory\LLaMA-Factory-0.9.3\output\Qwen3-0.6B-lora_sft
 template: llama3
 infer_backend: huggingface  # choices: [huggingface, vllm, sglang]
 trust_remote_code: true
