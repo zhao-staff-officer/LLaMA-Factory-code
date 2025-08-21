@@ -51,9 +51,86 @@ LLaMA-Factory 深度支持中文等多语言场景，例如通过 **RoPE 缩放�
 
 
 
+# 训练命令
+
+```shell
+# 启动训练
+# llamafactory-cli train examples/train_lora/llama3_lora_sft.yaml 
+# 启动对话
+# llamafactory-cli chat examples/inference/llama3_lora_sft.yaml
+# 导出模型
+# llamafactory-cli export examples/merge_lora/llama3_lora_sft.yaml
+```
 
 
 
+# GPU运行状态
+
+```shell
+#
+#nvitop -m auto
+```
+
+
+
+# YAML备注
+
+```json
+### model
+#适合可以链接网络下载模型的场景
+#model_name_or_path: meta-llama/Meta-Llama-3-8B-Instruct
+#适合不支持联网下载的模型场景
+model_name_or_path: E:\dataSource\LLModels\modelscope\Qwen3-0.6B
+trust_remote_code: true
+
+### method
+stage: sft
+do_train: true
+finetuning_type: lora
+lora_rank: 8
+lora_target: all
+
+### dataset
+#训练数据集
+dataset: identity,alpaca_zh_demo
+template: llama3
+cutoff_len: 2048
+max_samples: 100
+overwrite_cache: true
+preprocessing_num_workers: 16
+dataloader_num_workers: 0
+
+### output
+#保存地址
+output_dir: saves/Qwen3-0.6B/lora/sft
+#每50条记录一次
+logging_steps: 50
+#每50条保存一次
+save_steps: 50
+plot_loss: true
+overwrite_output_dir: true
+save_only_model: false
+report_to: none  # choices: [none, wandb, tensorboard, swanlab, mlflow]
+
+### train
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 8
+learning_rate: 1.0e-4
+num_train_epochs: 3.0
+lr_scheduler_type: cosine
+warmup_ratio: 0.1
+bf16: true
+ddp_timeout: 180000000
+resume_from_checkpoint: null
+
+### eval
+# eval_dataset: alpaca_en_demo
+# val_size: 0.1
+# per_device_eval_batch_size: 1
+# eval_strategy: steps
+# eval_steps: 500
+
+```
 
 
 
