@@ -284,6 +284,50 @@ EETQ(Easy and Efficient Quantization for Transformers)是一种只对模型权�
 
 ## ollama部署
 
+### GGUF格式
+
+在传统的DeepLearningModel开发中大多使用Pytorch来进行开发，但因为在部署是回面临相以来Library太多，版本管理的问题才有了GGML,GGMF,GGJT等格式，而在开源社区不停的迭代后GGUF诞生了。
+
+GGUF实际上是基于GGJT的格式进行优化的，并解决了GGML当初面临的问题，包括：
+
+1：可扩展性：轻松为GGML架构下的工具添加新功能，或面向GGUF模型添加Feature,不会破坏与现有模型的兼容性。
+
+2：对mmap（内存映射）的兼容性：该模型可以使用mmap进行加载，实现快速载入和存储。
+
+3：易于使用：模型可以使用少了代码轻松加载和存储，无需依赖Library,同时对于不同编程语言支持程度高。
+
+4：模型信息完整：加载模型所需的所有信息都包含在模型文件中，不需额外编写设置文件。
+
+5：有利于模型量化：GGUF支持模型量化（4位，8位，F16），在GPU变得越来越昂贵的情况下，节省VRAM成本也非常重要。
+
+
+
+### hf转gguf
+
+下载工具：https://github.com/ggml-org/llama.cpp
+
+运行命令：pip install -r requirements.txt
+
+运行转换命令：python convert_hf_to_gguf.py <模型输入路径>    --outfile <输出GGUF输出路径及名称>  --outtype <输出类型>
+
+输出类型参考：https://github.com/ggml-org/llama.cpp/blob/master/tools/quantize/README.md  
+
+
+
+### 创建ollama配置文件 ModelFile
+
+```
+FROM <模型文件地址>
+```
+
+​	
+
+### 创建ollama模型
+
+运行命令：ollama create <模型名称> --file <模型配置文件>
+
+
+
 
 
 ## vllm部署
