@@ -271,3 +271,19 @@ EETQ(Easy and Efficient Quantization for Transformers)是一种只对模型权�
 | quantization_type       | Literal[“fp4”, “nf4”]                  | 量化时使用的数据类型，支持 “fp4” 和 “nf4”。                  | nf4          |
 | double_quantization     | bool                                   | 是否在量化过程中使用 double quantization，通常用于 “bitsandbytes” int4 量化训练。 | True         |
 | quantization_device_map | Optional[Literal[“auto”]]              | 用于推理 4-bit 量化模型的设备映射。需要 “bitsandbytes >= 0.43.0”。 | None         |
+
+
+
+# 模型评估
+
+
+
+
+
+# 模型部署与接口调用
+
+## ollama部署
+
+
+
+## vllm部署
