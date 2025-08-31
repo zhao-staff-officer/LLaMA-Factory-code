@@ -331,3 +331,142 @@ FROM <模型文件地址>
 
 
 ## vllm部署
+
+#### 介绍
+
+传统 LLM 推理框架（如 Hugging Face Transformers 原生推理）存在两大关键问题：
+
+1. 内存效率低：LLM 推理时需存储大量中间结果（如 Attention 层的 KV 缓存），传统框架采用 “连续内存块” 存储，易导致内存碎片化、利用率不足，甚至无法加载大模型；
+2. **吞吐量低**：采用 “静态批处理”（Static Batching），即一次处理固定数量的请求，若请求长度差异大，会出现 “等待空转”，资源浪费严重。
+
+vLLM 针对这些问题设计，核心价值在于：
+
+- **极致性能**：吞吐量比传统框架（如 Transformers）高 5-10 倍，延迟降低 30% 以上；
+- **内存友好**：支持超大模型（如 175B 参数的 GPT-3）在有限 GPU 资源下运行，且支持动态内存分配；
+- **易用性高**：兼容 Hugging Face 模型格式、OpenAI API 协议，开箱即用，无需大量定制开发；
+- **扩展性强**：支持多 GPU 并行、分布式推理、动态批处理等，适配从单机到大规模集群的场景。
+
+
+
+#### 部署命令 docker
+
+```shell
+docker run 
+--gpus all   		#允许容器访问主机上所有可用的 GPU
+--name Qwen3-0.6B   #为容器指定一个固定名称（此处为 Qwen3-0.6B）
+ -p 8000:8000  		#端口映射
+-v <模型地址>:/app/local_model  #数据卷挂载，将主机上的本地文件 / 文件夹映射到容器内，实现 “主机与容器文件共享”
+docker.1ms.run/vllm/vllm-openai:latest   #指定要运行的 Docker 镜像
+--model /app/local_model   #指定vLLM 要加载的模型路径（容器内的路径）,需与 -v 参数的容器内路径一致,否则 vLLM 会找不到模型文件
+--port 8000  #指定 vLLM 服务在容器内监听的端口（需与 -p 参数的容器端口一致）
+--host 0.0.0.0   #指定 vLLM 服务绑定的网络地址,：0.0.0.0 表示允许容器内所有网络接口访问
+--max-model-len 10240  #设置模型支持的最大上下文长度
+--gpu-memory-utilization 0.95  #设置 GPU 内存的最大利用率比例,避免 vLLM 完全占满 GPU 内存
+```
+
+
+
+#### 其余参数
+
+##### 一、**性能优化与资源管理**
+
+###### 1. **多 GPU 并行参数**
+
+- **`--tensor-parallel-size N`**
+  - **作用**：将模型层拆分到 `N` 个 GPU 上（张量并行），支持单卡无法加载的大模型（如 70B 参数的 LLaMA-2）。
+  - **示例**：`--tensor-parallel-size 4`（使用 4 张 GPU 拆分模型）。
+  - **注意**：需与实际 GPU 数量一致，否则可能触发错误。
+- **`--pipeline-parallel-size M`**
+  - **作用**：结合张量并行，将模型层按流水线拆分到 `M` 个节点（多机多 GPU 场景）。
+  - **示例**：`--pipeline-parallel-size 2`（跨 2 个节点部署模型）docs.vllm.ai。
+
+###### 2. **内存优化参数**
+
+- **`--swap-space X`**
+  - **作用**：设置 CPU 内存作为 GPU 内存不足时的交换空间（单位：GB）。
+  - **示例**：`--swap-space 16`（预留 16GB CPU 内存）。
+  - **风险**：可能导致服务挂起（需配合 `--use-v2-block-manager` 解决）。
+- **`--kv-cache-dtype {fp8, fp16, bf16}`**
+  - **作用**：设置 KV 缓存的数据类型，降低内存占用（如 FP8 可节省 50% 显存）。
+  - **示例**：`--kv-cache-dtype fp8`（需配合量化参数使用）。
+
+###### 3. **批处理控制参数**
+
+- **`--max-batch-prefill-tokens K`**
+  - **作用**：控制预填充阶段的最大 token 数，平衡吞吐量和延迟。
+  - **示例**：`--max-batch-prefill-tokens 4096`（适合长序列处理）。
+- **`--max-batch-sampling-tokens S`**
+  - **作用**：控制解码阶段的最大 token 数，避免 GPU 过载。
+  - **示例**：`--max-batch-sampling-tokens 2048`（默认值，适合多数场景）github。
+- **`--enable-chunked-prefill`**
+  - **作用**：分块处理长输入（如 10k+ tokens），减少内存峰值。
+  - **示例**：`--enable-chunked-prefill`（需结合 `--max-batch-prefill-tokens` 使用）。
+
+##### 二、**模型与推理配置**
+
+###### 1. **模型加载参数**
+
+- **`--tokenizer-type TYPE`**
+  - **作用**：指定 tokenizer 类型（如 `huggingface` 或自定义）。
+  - **示例**：`--tokenizer-type huggingface`（默认值）vLLM。
+- **`--tokenizer-path PATH`**
+  - **作用**：指定自定义 tokenizer 路径（若模型未包含）。
+  - **示例**：`--tokenizer-path /app/tokenizer`。
+
+###### 2. **生成策略参数**
+
+- **`--temperature T`**
+  - **作用**：控制生成随机性（`T=0` 为贪心解码，`T=1` 为默认随机）。
+  - **示例**：`--temperature 0.7`（适合创意文本）docs.vllm.ai。
+- **`--top-p P`**
+  - **作用**：核采样参数，保留概率质量前 `P` 的 token。
+  - **示例**：`--top-p 0.95`（过滤低概率 token）docs.vllm.ai。
+- **`--max-new-tokens N`**
+  - **作用**：限制生成的最大新 token 数（替代 `max_tokens`，更符合 OpenAI 规范）。
+  - **示例**：`--max-new-tokens 500`（与 `max_model_len` 共同作用）github。
+
+###### 3. **高级推理参数**
+
+- **`--speculative-model MODEL`**
+  - **作用**：启用推测解码（如 `ngram` 模型），提升吞吐量。
+  - **示例**：`--speculative-model ngram --num-speculative-tokens 4`（每次推测生成 4 个 token）。
+- **`--repetition-penalty R`**
+  - **作用**：惩罚重复 token（`R>1` 抑制重复，`R<1` 鼓励重复）。
+  - **示例**：`--repetition-penalty 1.2`（避免生成冗余内容）docs.vllm.ai。
+
+##### 三、**安全与权限控制**
+
+###### 1. **API 安全参数**
+
+- **`--api-key KEY`**
+  - **作用**：设置 API 密钥，强制客户端在请求头中携带 `Authorization: Bearer KEY`。
+  - **示例**：`--api-key my-secret-key`（生产环境必选）github。
+- **`--cors-allow-origins DOMAINS`**
+  - **作用**：允许跨域请求（如前端域名）。
+  - **示例**：`--cors-allow-origins "https://example.com, http://localhost:3000"`github。
+
+###### 2. **容器权限参数**
+
+- `--shm-size SIZE`
+  - **作用**：设置共享内存大小（PyTorch 后台进程通信依赖）。
+  - **示例**：`--shm-size 1g`（避免因共享内存不足导致崩溃）vLLM。
+
+##### 四、**日志与监控**
+
+###### 1. **日志参数**
+
+- **`--log-level {debug, info, warning, error}`**
+  - **作用**：控制日志详细程度（`debug` 用于调试，`info` 用于生产）。
+  - **示例**：`--log-level info`（默认值）github。
+- **`--log-file PATH`**
+  - **作用**：将日志输出到指定文件（替代控制台）。
+  - **示例**：`--log-file /app/vllm.log`github。
+
+###### 2. **监控参数**
+
+- `--metrics-server PORT`
+  - **作用**：启动 Prometheus 兼容的指标服务器（如 `:8080`）。
+  - **示例**：`--metrics-server 8080`（通过 `http://localhost:8080/metrics` 查看指标
+
+
+
